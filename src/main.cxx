@@ -15,13 +15,13 @@ int main ( int argc, char **argv )
         cout << "USE : k-means image_path" <<endl;
         return -1;
     }
-    Mat img = imread(argv[1], CV_LOAD_IMAGE_UNCHANGED);
+    Mat3b img = imread(argv[1], CV_LOAD_IMAGE_UNCHANGED);
     if(!img.data) {
         cout << "Could not open or find the image" << endl;
         return -1;
     }
 
-    Mat img_result = img.clone();
+    Mat3b img_result = img.clone();
 
     KMeans kmeans(&img);
     img_result = kmeans.computeClusterization(4);
