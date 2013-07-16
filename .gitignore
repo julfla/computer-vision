@@ -11,3 +11,10 @@
 *.lai
 *.la
 *.a
+
+# Build output
+bin/
+build/
+
+# Qt Output
+*.user
