@@ -21,18 +21,18 @@ int main ( int argc, char **argv )
         return -1;
     }
 
-    Mat3b img_result = img.clone();
-
     KMeans kmeans(&img);
-    img_result = kmeans.computeClusterization(4);
+    Mat1b img_result = *kmeans.computeClusterization(4);
 
-    //namedWindow( "Input Picture", CV_WINDOW_AUTOSIZE );
-    //imshow( "Input Picture", img );
-    //namedWindow( "Result Image", CV_WINDOW_AUTOSIZE );
-    //imshow( "Result Image", img_result );
-    waitKey();
+    namedWindow( "Input Picture", CV_WINDOW_AUTOSIZE );
+    imshow( "Input Picture", img );
+    namedWindow( "Result Image", CV_WINDOW_AUTOSIZE );
+    imshow( "Result Image", img_result );
+
+    while( 'q' != (char) waitKey() ){}
 
     img.release();
+    img_result.release();
 
     return 0;
 }

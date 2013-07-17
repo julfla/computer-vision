@@ -5,8 +5,6 @@
 #include <iostream>
 #include <boost/random.hpp>
 
-//typedef it_3D std::iterator<cv::Point3d>;
-
 using namespace cv;
 
 class KMeans {
@@ -48,6 +46,7 @@ class KMeans {
     };
 
     typedef std::vector<Cluster>::iterator it_2d;
+    typedef Mat1b::iterator it_1d;
 
     std::vector<Cluster> clusters;
     const Mat3b *input_image;
@@ -56,39 +55,39 @@ class KMeans {
     void init_clusters(int n_clusters) {
         //generator for random number
         boost::minstd_rand g(std::time(0));
-        boost::uniform_int<> uni_with(0,input_image->rows);
-        boost::uniform_int<> uni_height(0,input_image->cols);
+        boost::uniform_int<> uni_with(0,input_image->size().width);
+        boost::uniform_int<> uni_height(0,input_image->size().height);
         //initialize the cluster centered on random position
         for(int i = 0; i < n_clusters; ++i)
             clusters.push_back(Cluster(input_image,uni_with(g),uni_height(g)));
     }
 
     void assign_clusters() {
-        for(int i = 0; i < input_image->rows; ++i)
-            for(int j = 0; j < input_image->cols; ++j) {
-                double min_dist;
-                int min_cluster;
+        for(int i = 0; i < cluster_image->size().height; ++i)
+            for(int j = 0; j < cluster_image->size().width; ++j) {
+                double min_dist = 1e14;
+                uchar min_cluster;
                 for(int k = 0; k < clusters.size(); ++k) {
-                    double dist = clusters.at(k).distance2pixel(input_image->operator ()(Point(i,j)), i, j);
+                    double dist = clusters.at(k).distance2pixel(input_image->at<Vec3b>(i,j), i, j);
                     if(dist < min_dist) {
                         min_dist = dist;
                         min_cluster = k;
                     }
                 }
-                cluster_image->operator ()(i,j) = min_cluster;
+                cluster_image->at<uchar>(i,j) = min_cluster;
             }
     }
 
     void update_cluster_position() {
         for(int k = 0; k < clusters.size(); ++k) {
         int number_pixel = 0;
-        Vec2b center(0,0);
-        Vec3b color(0,0,0);
-        for(int i = 0; i < input_image->rows; ++i)
-                for(int j = 0; j < input_image->cols; ++j)
-                    if(cluster_image->operator ()(i,j) == k) {
+        Vec2i center(0,0);
+        Vec3i color(0,0,0);
+        for(int i = 0; i < input_image->size().height; ++i)
+            for(int j = 0; j < input_image->size().width; ++j)
+                    if(cluster_image->at<uchar>(i,j) == k) {
                         center += Vec2b(i,j);
-                        color += input_image->operator ()(i,j);
+                        color += input_image->at<Vec3b>(i,j);
                         number_pixel++;
                     }
         clusters.at(k).setCenter(center / number_pixel);
@@ -100,21 +99,23 @@ public:
 
     KMeans(const Mat3b *input_image) {
         this->input_image = input_image;
-        cluster_image = new Mat1b(input_image->rows, input_image->cols, 1);
+        cluster_image = new Mat1b ( Mat::zeros(input_image->size(),CV_8UC1) );
     }
 
-    cv::Mat3b computeClusterization(int n_clusters) {
+    cv::Mat1b* computeClusterization(int n_clusters) {
         init_clusters(n_clusters);
-        for(int i = 0; i < 10; ++i) {
+        for(int i = 0; i < 1; ++i) {
             for(it_2d it = clusters.begin(); it < clusters.end(); ++it)
-                std::cout << "x:" << (int) it->center[0] << " y:" << (int) it->center[1] << std::endl;
             assign_clusters();
             update_cluster_position();
         }
-        for(it_2d it = clusters.begin(); it < clusters.end(); ++it) {
-            std::cout << "x:" << (int) it->center[0] << " y:" << (int) it->center[1] << std::endl;
+//        for(it_2d it = clusters.begin(); it < clusters.end(); ++it) {
+//            std::cout << "x:" << (int) it->center[0] << " y:" << (int) it->center[1] << std::endl;
+//        }
+        for(it_1d it = cluster_image->begin(); it < cluster_image->end(); ++it) {
+            *it *= (255 / n_clusters);
         }
-        return input_image->clone();
+        return cluster_image;
     }
 
     ~KMeans() {
