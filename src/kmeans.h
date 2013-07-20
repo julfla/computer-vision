@@ -15,6 +15,7 @@ class KMeans {
 
         Vec3b color;
         Vec2b center;
+        double factor_distance;
 
         void setColor(Vec3b color) {
             this->color = color;
@@ -24,13 +25,8 @@ class KMeans {
             this->center = center;
         }
 
-
-        Cluster(Vec2b center, Vec3b color) {
-            this->center = center;
-            this->color = color;
-        }
-
-        Cluster(const Mat3b *img, int x, int y) {
+        Cluster(const Mat3b *img, int x, int y, double factor_distance) {
+            this->factor_distance = factor_distance;
             center = Vec2b(x,y);
             color = img->operator ()(Point(x,y));
         }
@@ -41,7 +37,7 @@ class KMeans {
             for(int i = 0; i < 3; ++i)
                 distColor += pow(color.val[i] - pixel[i],2);
             distColor = sqrt(distColor);
-            return distEucli + distColor;
+            return factor_distance * distEucli + distColor;
         }
     };
 
@@ -52,14 +48,14 @@ class KMeans {
     const Mat3b *input_image;
     Mat1b* cluster_image;
 
-    void init_clusters(int n_clusters) {
+    void init_clusters(int n_clusters, double factor_distance) {
         //generator for random number
         boost::minstd_rand g(std::time(0));
         boost::uniform_int<> uni_with(0,input_image->size().width);
         boost::uniform_int<> uni_height(0,input_image->size().height);
         //initialize the cluster centered on random position
         for(int i = 0; i < n_clusters; ++i)
-            clusters.push_back(Cluster(input_image,uni_with(g),uni_height(g)));
+            clusters.push_back(Cluster(input_image,uni_with(g),uni_height(g), factor_distance));
     }
 
     void assign_clusters() {
@@ -102,9 +98,9 @@ public:
         cluster_image = new Mat1b ( Mat::zeros(input_image->size(),CV_8UC1) );
     }
 
-    cv::Mat1b* computeClusterization(int n_clusters) {
-        init_clusters(n_clusters);
-        for(int i = 0; i < 1; ++i) {
+    cv::Mat1b* computeClusterization(int n_clusters, double factor_distance) {
+        init_clusters(n_clusters, factor_distance);
+        for(int i = 0; i < 10; ++i) {
             for(it_2d it = clusters.begin(); it < clusters.end(); ++it)
             assign_clusters();
             update_cluster_position();
